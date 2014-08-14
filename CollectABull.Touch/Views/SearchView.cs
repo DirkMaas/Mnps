@@ -11,16 +11,22 @@ using MonoTouch.UIKit;
 using SimpleCollectionView;
 using CollectABull.Core.Services.DataStore;
 using MonoTouch.Foundation;
+using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace CollectABull.Touch
 {
 	public partial class SearchView : MvxViewController
 	{
-//		LineLayout lineLayout;
 		UIScrollView _scrollView;
+		UIViewController _uiVc;
+		List<MyCollectionView<MnpsCell>> _cvList;
+		enum WhichCollectionView { ColorCv = 1, FlowerShapeCv, HabitatCv, HeightCv, LeafArrangementCv, LeafMarginCv,
+			LeafShapeCv, LeafVenationCv };
 
 		public SearchView() : base("SearchView", null)
 		{
+			_cvList = new List<MyCollectionView<MnpsCell>>();
 		}
 
 		public override void DidReceiveMemoryWarning()
@@ -31,29 +37,30 @@ namespace CollectABull.Touch
 			// Release any cached data, images, etc that aren't in use.
 		}
 
-		void SetStuff<C, T>(UIViewController uiVc, Action<int?> SetKey, float y, float h=70) where C : MnpsCell // and T is a table class
+		void SetStuff<C, T>(Action<int?> SetKey, float y, WhichCollectionView which, float h=70) where C : MnpsCell // and T is a table class
 		{
 			var lineLayout = new LineLayout();
 			var frame = new RectangleF(0f, y, 320f, h);
-			var cccv = new MyCollectionView<C>(frame, lineLayout, false);
-			cccv.Delegate = new MyDelegate<C,T>(this, SetKey);
-			cccv.DataSource = new MyDataSource2<C,T>();
-			cccv.RegisterClassForCell(typeof(C), new NSString(typeof(C).Name));
-			uiVc.Add(cccv);
-//			Add(cccv);
-			_scrollView.AddSubview(cccv);
+			var mcv = new MyCollectionView<C>(frame, lineLayout, false);
+			mcv.Delegate = new MyDelegate<C, T>(SetKey);
+			mcv.DataSource = new MyDataSource2<C, T>();
+			mcv.RegisterClassForCell(typeof(C), new NSString(typeof(C).Name));
+			_uiVc.Add(mcv);
+			_scrollView.AddSubview(mcv);
+			mcv.Tag = (int)which;
+//			_cvList.Add(mcv);
 		}
 
 
 		public override void ViewDidLoad()
 		{
 			base.ViewDidLoad();
-//			var uiVc = new MyViewController2(/*cccv, typeof(ColorCell)*/);
-			_scrollView = new UIScrollView(new RectangleF(0, 0, View.Frame.Width, 
-				View.Frame.Height - NavigationController.NavigationBar.Frame.Height));
+//			var vw = new UIView(new RectangleF(0f, 65f, View.Frame.Width, 50));
+//			Add(vw);
+			_scrollView = new UIScrollView(new RectangleF(0, 105, View.Frame.Width, 
+				View.Frame.Height - NavigationController.NavigationBar.Frame.Height - 105));
 			_scrollView.ContentSize = new SizeF(320f, 600f);
-			var uiVc = new UIViewController();
-//			float y = 0, h = 130;
+			_uiVc = new UIViewController();
 
 			for (int i = 0; i < 8; ++i)
 			{
@@ -61,31 +68,31 @@ namespace CollectABull.Touch
 				switch (i)
 				{
 				case 0:
-					SetStuff<ColorCell, colorsV>(uiVc, SetColorKey, 0/*, 130f*/);
+					SetStuff<ColorCell, colorsV>(SetColorKey, 0, WhichCollectionView.ColorCv);
 					break;
 				case 1:
-					SetStuff<FlowerShapeCell, flowerShapeV>(uiVc, SetFlowerShapeKey, 70);
+					SetStuff<FlowerShapeCell, flowerShapeV>(SetFlowerShapeKey, 70, WhichCollectionView.FlowerShapeCv);
 					break;
 				case 2:
-					SetStuff<HabitatCell, habitatV>(uiVc, SetHabitatKey, 140);
+					SetStuff<HabitatCell, habitatV>(SetHabitatKey, 140, WhichCollectionView.HabitatCv);
 					break;
 				case 3:
-					SetStuff<HeightCell, heightV>(uiVc, SetHeightKey, 210);
+					SetStuff<HeightCell, heightV>(SetHeightKey, 210, WhichCollectionView.HeightCv);
 					break;
 				case 4:
-					SetStuff<LeafArrangementCell, leafArrangementV>(uiVc, SetLeafArrangementKey, 280);
+					SetStuff<LeafArrangementCell, leafArrangementV>(SetLeafArrangementKey, 280, WhichCollectionView.LeafArrangementCv);
 					break;
 				case 5:
-					SetStuff<LeafMarginCell, leafMarginV>(uiVc, SetLeafMarginKey, 350);
+					SetStuff<LeafMarginCell, leafMarginV>(SetLeafMarginKey, 350, WhichCollectionView.LeafMarginCv);
 					break;
 				case 6:
-					SetStuff<LeafShapeCell, leafShapeV>(uiVc, SetLeafShapeKey, 420);
+					SetStuff<LeafShapeCell, leafShapeV>(SetLeafShapeKey, 420, WhichCollectionView.LeafShapeCv);
 					break;
 				case 7:
-					SetStuff<LeafVenationCell, leafVenationV>(uiVc, SetLeafVenationKey, 490);
+					SetStuff<LeafVenationCell, leafVenationV>(SetLeafVenationKey, 490, WhichCollectionView.LeafVenationCv);
 					break;
 //				case 8:
-//					SetStuff<Leaf_stemTextureCell, leaf_stemTextureV>(uiVc, SetLeaf_stemTextureKey, 340);
+//					SetStuff<Leaf_stemTextureCell, leaf_stemTextureV>(SetLeaf_stemTextureKey, 340);
 //					break;
 				default:
 					throw new NotImplementedException();
@@ -93,50 +100,18 @@ namespace CollectABull.Touch
 			}
 
 
-#if false
-
-			LineLayout lineLayout2 = new LineLayout()
-			{
-				ScrollDirection = UICollectionViewScrollDirection.Horizontal
-			};
-			var frame2 = new RectangleF(0f, 130, 320f, 70f);
-			var fsccv = new MyCollectionView<FlowerShapeCell>(frame2, lineLayout2, false);
-//			var uivc2 = new MyViewController<FlowerShapeCell>(uicv2);
-			fsccv.Delegate = new MyDelegate<FlowerShapeCell, flowerShapeV>(this);
-			fsccv.DataSource = new MyDataSource2<FlowerShapeCell, flowerShapeV>();
-			fsccv.Tag = 2;
-			fsccv.RegisterClassForCell(typeof(FlowerShapeCell), new NSString(typeof(FlowerShapeCell).Name));
-			uiVc.Add(fsccv);
-			Add(fsccv);
-//			AddChildViewController(uivc2);
-#endif
-
-
-//			UIApplication app = UIApplication.SharedApplication;
-//			var sel = new MonoTouch.ObjCRuntime.Selector("selector");
-//			app.PerformSelector(sel, null, 0.0);
-#if true
-			AddChildViewController(uiVc);
-			uiVc.DidMoveToParentViewController(this);
+			AddChildViewController(_uiVc);
+			_uiVc.DidMoveToParentViewController(this);
 			Add(_scrollView);
-#else
-			// this crashes with the message: Object reference not set to an instance of an object
-			uicv.Window.RootViewController=this;
-			// This produces a black screen and the message:
-			// Unbalanced calls to begin/end appearance transitions for <HomeView: 0x13461400>.
-			//			UIApplication.SharedApplication.Windows[0].RootViewController = this;
-			// - (void)performSelector:(SEL)aSelector withObject:(id)anArgument afterDelay:(NSTimeInterval)delay
-#endif
 
-
-//			var textField = new UITextField(new RectangleF(0, 300, 300, 40));
+//			var textField = new UITextField(new RectangleF(0, 50, 300, 40));
 //			Add(textField);
 
 
 			var set = this.CreateBindingSet<SearchView, CollectABull.Core.SearchViewModel>();
 			// to remove the need for `For("N28")` see Setup.FillBindingNames
 //			set.Bind(binaryEdit).For("N28").To(vm => vm.Counter);
-//			set.Bind(textField).To(vm => vm.FlowerShape);
+			set.Bind(lblNumFound).To(vm => vm.NumFound);
 			// to remove the need for `For(be => be.MyCount)` see Setup.FillBindingNames
 //			set.Bind(nicerBinaryEdit).For(be => be.MyCount).To(vm => vm.Counter);
 			set.Bind(this).For(cv => cv.ColorKey).To(vm => vm.Color);
@@ -148,13 +123,35 @@ namespace CollectABull.Touch
 			set.Bind(this).For(cv => cv.LeafShapeKey).To(vm => vm.LeafShape);
 			set.Bind(this).For(cv => cv.LeafVenationKey).To(vm => vm.LeafVenation);
 			set.Apply();
-//			this.CreateBinding(uivc).For(cll => cll.DataContext).To((SearchViewModel vm) => vm).TwoWay().Apply();
 
-
-//			window.RootViewController = uivc;
-//			window.MakeKeyAndVisible();
-
+			btnClear.TouchUpInside += (o, s) =>
+			{
+				ClearSetting<ColorCell, colorsV>(WhichCollectionView.ColorCv);
+				ClearSetting<FlowerShapeCell, flowerShapeV>(WhichCollectionView.FlowerShapeCv);
+				ClearSetting<HabitatCell, habitatV>(WhichCollectionView.HabitatCv);
+				ClearSetting<HeightCell, heightV>(WhichCollectionView.HeightCv);
+				ClearSetting<LeafArrangementCell, leafArrangementV>(WhichCollectionView.LeafArrangementCv);
+				ClearSetting<LeafMarginCell, leafMarginV>(WhichCollectionView.LeafMarginCv);
+				ClearSetting<LeafShapeCell, leafShapeV>(WhichCollectionView.LeafShapeCv);
+				ClearSetting<LeafVenationCell, leafVenationV>(WhichCollectionView.LeafVenationCv);
+			};
 		}
+
+		void ClearSetting<C, T>(WhichCollectionView which) where C : MnpsCell
+		{
+			var cv1 = 
+				(MyCollectionView<C>)_scrollView.ViewWithTag((int)which);
+			Debug.Assert(cv1 != null);
+			NSIndexPath[] p = cv1.GetIndexPathsForSelectedItems();
+			foreach (NSIndexPath ip in p)
+			{
+				cv1.DeselectItem(ip, false);
+				var del = (MyDelegate<C, T>)cv1.Delegate;
+				Debug.Assert(del != null);
+				del.Clear();
+			}
+		}
+
 		public void SetColorKey(int? i) {ColorKey = i;}
 		public event EventHandler ColorKeyChanged;
 		int? _colorKey;
@@ -274,6 +271,5 @@ namespace CollectABull.Touch
 			if (handler != null)
 				handler(this, EventArgs.Empty);
 		}
-
 	}
 }
